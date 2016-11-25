@@ -8,6 +8,8 @@ class OpenstackAPI:
         self.identity = self.IdentityAPI()
         self.image = self.ImageServiceAPI()
         self.flavor = self.FlavorServiceAPI()
+        self.tenants = self.TenantsAPI()
+        self.projects = self.ProjectAPI()
 
     # 定義 flavor
     def FlavorServiceAPI(self):
@@ -47,10 +49,31 @@ class OpenstackAPI:
 
         return {"url":url,"header":header,"body":body}
 
+    # 定義 Tenant
+    def TenantsAPI(self):
+        url = "http://controller:5000/v2.0/tenants"
+        header = {"Content-Type":"application/json","X-Auth-Token":""}
+        return {"url":url,"header":header}
+
+    # 定義 project
+    def ProjectAPI(self):
+        url = "http://controller:5000/v3/project"
+        header = {"Content-Type":"application/json","X-Auth-Token":""}
+        return {"url":url,"header":header}
+
+    def getTenants(self):
+        self.tenants["header"]["X-Auth-Token"] = self.token
+        r = requests.get(self.tenants["url"],headers=self.tenants["header"])
+        tenantsData = json.loads(r.text)
+        self.tenantID = tenantsData["tenants"][0]["id"]
+        print("tenantID: " + self.tenantID)
+
     # 取得 token
     def getToken(self):
         r = requests.post(self.identity["url"],headers=self.identity["header"],data=json.dumps(self.identity["body"]))
         self.token = r.headers["X-Subject-Token"]
+        print("Identity header: ")
+        print(r.headers)
         print("Get a token: "+ self.token)
 
 
@@ -58,7 +81,10 @@ class OpenstackAPI:
     # URL 跟 header 還須更改
     def getFlavor(self):
         self.flavor["header"]["X-Auth-Token"] = self.token
+        self.flavor["url"] = self.flavor["url"].replace("v2","v2/"+self.tenantID)
+
         r = requests.get(self.flavor["url"],headers=self.flavor["header"])
+        print("Flavor:")
         print(r.text)
 
     # 取得 image ，相當於 openstack image list，將第一筆image id儲存
@@ -71,6 +97,11 @@ class OpenstackAPI:
             self.firstImage = self.images["images"][0]["id"]
         print("Find a image: "+ self.firstImage)
 
+    def getProject(self):
+        self.projects["header"]["X-Auth-Token"] = self.token
+        r = requests.get(self.projects["url"],headers=self.projects["header"])
+        print("Project: ")
+        print(r.text)
     #還沒做
     def createInstance(self,token,flover,image):
         print("Nothing...")
@@ -79,6 +110,8 @@ class OpenstackAPI:
 def main():
     api = OpenstackAPI()
     api.getToken()
+    api.getTenants()
+    api.getProject()
     api.getImage()
     api.getFlavor()
 
