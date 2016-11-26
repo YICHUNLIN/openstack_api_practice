@@ -66,7 +66,9 @@ class OpenstackAPI:
         r = requests.get(self.tenants["url"],headers=self.tenants["header"])
         tenantsData = json.loads(r.text)
         self.tenantID = tenantsData["tenants"][0]["id"]
-        print("tenantID: " + self.tenantID)
+        print("TenantID: " + self.tenantID)
+        print("Tenant")
+        print(r.text)
 
     # 取得 token
     def getToken(self):
